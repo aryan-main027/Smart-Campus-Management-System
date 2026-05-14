@@ -99,7 +99,7 @@ app.post("/users" , async(req,res) => {
   try{
     const {name,email,password,role} = req.body;
 
-    const { rows } = pool.query(
+    const { rows } = await pool.query(
       `
       INSERT INTO users(name,email,password,role) 
       VALUES($1,$2,$3,$4)
