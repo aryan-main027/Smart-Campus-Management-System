@@ -91,6 +91,36 @@ app.get("/users/:id" , async (req,res) => {
   }
 })
 
+// POST users
+// Without Returning * postgreSQL return INSERT 0 1 which means 1 row affected but we donot want to show this as an output to user so we use this PostgreSQL feture which return the data of table that is inserted
+
+app.post("/users" , async(req,res) => {
+
+  try{
+    const {name,email,password,role} = req.body;
+
+    const { rows } = pool.query(
+      `
+      INSERT INTO users(name,email,password,role) 
+      VALUES($1,$2,$3,$4)
+      RETURNING *
+      `,[name,email,password,role] 
+    )
+
+    res.status(200).json({
+      success : true,
+      message : "User Create successfully",
+      data : rows[0]
+    })
+  }catch(err){
+    res.status(500).json({
+      success : false,
+      message : "Unable to create user"
+    })
+  }
+})
+
+
 // PORT
 const PORT = process.env.PORT || 3000;
 
