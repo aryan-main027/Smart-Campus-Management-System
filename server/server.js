@@ -107,7 +107,7 @@ app.post("/users" , async(req,res) => {
       `,[name,email,password,role] 
     )
 
-    res.status(200).json({
+    res.status(201).json({
       success : true,
       message : "User Create successfully",
       data : rows[0]
