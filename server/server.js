@@ -120,6 +120,46 @@ app.post("/users" , async(req,res) => {
   }
 })
 
+// PUT users/;id
+app.put("/users/:id" , async (req,res)=>{
+  
+  try{
+    const { name , email , password , role } = req.body;
+    const { id } = req.params;
+
+    const { rows } = await pool.query(
+      `
+      UPDATE users
+      SET 
+        name = $1,
+        email = $2,
+        password = $3,
+        role = $4
+      WHERE id = $5
+      RETURNING * 
+      `,[name,email,password,role,id]
+    );
+  
+    if(rows.length == 0){
+      res.status(404).json({
+        success : false,
+        message : "User not found"
+      })
+    }
+
+    res.status(201).json({
+      success : true,
+      message : "User updated successfully",
+      data : rows[0]
+    })
+  }catch(error){
+
+    res.status(500).json({
+      success : false,
+      message : error.message
+    })
+  }
+})
 
 // PORT
 const PORT = process.env.PORT || 3000;
