@@ -103,7 +103,7 @@ Smart-Campus-Management-System/
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone <your-repository-url>
+git clone <https://github.com/aryan-main027/Smart-Campus-Management-System>
 ```
 
 ---
