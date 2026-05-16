@@ -3,15 +3,22 @@ import dotenv from "dotenv";
 import cors from "cors";
 import pool from "./db/db.js"
 import userRoutes from "./routes/userRoutes.js"
+import authRoutes from "./routes/authRoutes.js"
+import cookieParser from "cookie-parser"
+import errorMiddleware from "./middlewares/errorMiddlewares.js"
 
 dotenv.config();
 
 const app = express();
 
+
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+app.use(errorMiddleware);
 
 app.use("/users",userRoutes)
+app.use("/auth",authRoutes);
 
 // Test DB Connection 
 app.get("/test-db", async (req, res) => {
