@@ -1,9 +1,11 @@
-import pool from "../db/db.js"
+import prisma from "../config/prisma.js"
+import bcrypt from "bcrypt"
 
 export const getUsers = async (req,res,next)=>{
 
   try{
-    const { rows } = await pool.query("SELECT * FROM users");
+
+    const rows = await prisma.user.findMany();
     
     res.status(200).json({
       success : true,
@@ -20,14 +22,18 @@ export const getUsers = async (req,res,next)=>{
 }
 
 export const getUserByID = async (req,res,next) => {
+
   const { id } = req.params;
 
   try{
-    const { rows } = await pool.query(
-      "SELECT * FROM users WHERE id = $1",[id]
-    )
 
-    if(rows.length === 0){
+    const rows = await prisma.user.findUnique({
+      where : {
+        id : Number(id)
+      }
+    })
+
+    if(!rows){
       return res.status(404).json({
         success : false,
         message : "User not found"
@@ -37,8 +43,9 @@ export const getUserByID = async (req,res,next) => {
     res.status(200).json({
       success : true,
       message : `Data for id = ${id}`,
-      data : rows[0]
+      data : rows
     })
+
   }catch(error){
 
     next(error);
@@ -52,18 +59,21 @@ export const getUserByID = async (req,res,next) => {
 //   try{
 //     const {name,email,password,role} = req.body;
 
-//     const { rows } = await pool.query(
-//       `
-//       INSERT INTO users(name,email,password,role) 
-//       VALUES($1,$2,$3,$4)
-//       RETURNING *
-//       `,[name,email,password,role] 
-//     )
+//     const hashPassword = await bcrypt.hash(password,10);
+
+//     const rows = await prisma.user.create({
+//       data : {
+//         name,
+//         email,
+//         password : hashPassword,
+//         role
+//       }
+//     })
 
 //     res.status(201).json({
 //       success : true,
 //       message : "User Create successfully",
-//       data : rows[0]
+//       data : rows
 //     })
 //   }catch(err){
 //     res.status(500).json({
@@ -76,34 +86,43 @@ export const getUserByID = async (req,res,next) => {
 export const updateUser = async (req,res,next)=>{
   
   try{
+
     const { name , email , password , role } = req.body;
     const { id } = req.params;
 
-    const { rows } = await pool.query(
-      `
-      UPDATE users
-      SET 
-        name = $1,
-        email = $2,
-        password = $3,
-        role = $4
-      WHERE id = $5
-      RETURNING * 
-      `,[name,email,password,role,id]
-    );
-  
-    if(rows.length == 0){
+    const userExists = await prisma.user.findUnique({
+      where : {
+        id : Number(id)
+      }
+    })
+
+    if(!userExists){
       return res.status(404).json({
         success : false,
         message : "User not found"
       })
     }
 
+    const hashPassword = await bcrypt.hash(password,10);
+
+    const rows = await prisma.user.update({
+      where : {
+        id : Number(id)
+      },
+      data : {
+        name,
+        email,
+        password : hashPassword,
+        role
+      }
+    });
+  
     res.status(200).json({
       success : true,
       message : "User updated successfully",
-      data : rows[0]
+      data : rows
     })
+
   }catch(error){
 
     next(error);
@@ -112,29 +131,34 @@ export const updateUser = async (req,res,next)=>{
 }
 
 export const deleteUser = async (req,res,next)=>{
+
   try{
 
     const { id } = req.params;
 
-    const { rows } = await pool.query(
-      `
-        DELETE FROM users
-        WHERE id = $1
-        RETURNING * 
-      `,[id]
-    )
-    
-    if(rows.length == 0){
+    const userExists = await prisma.user.findUnique({
+      where : {
+        id : Number(id)
+      }
+    })
+
+    if(!userExists){
       return res.status(404).json({
         success: false,
         message: "User not found"
       })
     }
 
+    const rows = await prisma.user.delete({
+      where : {
+        id : Number(id)
+      }
+    })
+    
     res.status(200).json({
       success : true,
       message : "User deleted successfully",
-      data : rows[0]
+      data : rows
     })
     
   }catch(error){

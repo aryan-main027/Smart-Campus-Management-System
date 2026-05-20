@@ -1,43 +1,44 @@
 import jwt from "jsonwebtoken"
-import pool from "../db/db.js"
+import prisma from "../config/prisma.js"
 import bcrypt from "bcrypt"
 
 export const registerUser = async (req,res,next)=>{
   try{
+
     const {name , email , password , role} = req.body;
 
     // Check if user already exists
     
-    const userExists = await pool.query(
-      `
-      SELECT * FROM users
-      WHERE email = $1
-      `,[email]
-    )
+    const userExists = await prisma.user.findUnique({
+      where: {
+        email
+      }
+    });
 
-    if(userExists.rows.length > 0 ){
+    if(userExists){
       return res.status(400).json({
         success : false,
         message : "User already exists"
       });
     }
 
-
     const hashPassword = await bcrypt.hash(password,10);
 
-    const { rows } = await pool.query(
-      `
-      INSERT INTO users(name, email, password, role)
-      VALUES($1, $2, $3, $4)
-      RETURNING *
-      `,[name , email , hashPassword , role]
-    ) 
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashPassword,
+        role
+      }
+    });
 
     res.status(201).json({
       success : true,
       message : "User Created",
-      data : rows[0]
+      data : user
     })
+
   }catch(error){
 
     next(error);
@@ -48,24 +49,23 @@ export const registerUser = async (req,res,next)=>{
 export const loginUser = async (req,res,next) => {
 
   try{
+
     const {email,password} = req.body;
 
-    const userExists = await pool.query(
-      `
-      SELECT * FROM users
-      WHERE email = $1
-      `,
-      [email]
-    );
+    const userExists = await prisma.user.findUnique({
+      where: {
+        email
+      }
+    });
 
-    if (userExists.rows.length === 0) {
+    if (!userExists) {
       return res.status(404).json({
         success: false,
         message: "User not found"
       });
     }
 
-    const user = userExists.rows[0];
+    const user = userExists;
 
     // Compare password
 
@@ -93,6 +93,7 @@ export const loginUser = async (req,res,next) => {
         expiresIn : "1d"
       }
     )
+
     res
     .cookie("token", token, {
       httpOnly: true,
@@ -105,7 +106,6 @@ export const loginUser = async (req,res,next) => {
       success: true,
       message: "Login successful"
     });
-
 
   }catch(error){
 

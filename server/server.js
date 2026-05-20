@@ -1,11 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import pool from "./db/db.js"
 import userRoutes from "./routes/userRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
 import cookieParser from "cookie-parser"
 import errorMiddleware from "./middlewares/errorMiddlewares.js"
+import prisma from "./config/prisma.js"
 
 dotenv.config();
 
@@ -21,16 +21,17 @@ app.use("/users",userRoutes)
 app.use("/auth",authRoutes);
 
 // Test DB Connection 
+
 app.get("/test-db", async (req, res) => {
   
   try {
     
-    const result = await pool.query("SELECT NOW()");
+    const result = await prisma.$queryRaw`SELECT NOW()`;
     
     res.status(200).json({
       success: true,
       message: "Database Connected Successfully",
-      data: result.rows[0]
+      data: result
     });
 
   } catch (err) {
@@ -46,15 +47,18 @@ app.get("/test-db", async (req, res) => {
 
 
 // PORT
+
 const PORT = process.env.PORT || 3000;
 
 // Server starts immediately
+
 app.listen(PORT, () => {
   console.log(`Server is running at ${PORT}`);
 });
 
 // Separate DB connection test
-pool.connect()
+
+prisma.$connect()
   .then(() => {
     console.log("Database Connected");
   })
